@@ -1,4 +1,6 @@
-use egui::{DragValue, TextEdit};
+use std::collections::BTreeMap;
+
+use egui::{DragValue, FontData, FontDefinitions, FontFamily, FontId, Style, TextEdit, TextStyle};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize, Default)]
@@ -36,18 +38,40 @@ pub struct TemplateApp {
 // }
 
 fn setup_custom_fonts(ctx: &egui::Context) {
-    let mut fonts = egui::FontDefinitions::default();
+    let mut fonts = FontDefinitions::default();
     fonts.font_data.insert(
         "zpix".to_owned(),
-        egui::FontData::from_static(include_bytes!("../zpix.ttf")),
+        FontData::from_static(include_bytes!("../zpix.ttf")),
         // egui::FontData::from_static(include_bytes!("/home/bilabila/.local/share/fonts/simhei.ttf")),
     );
     fonts
         .families
-        .entry(egui::FontFamily::Proportional)
+        .entry(FontFamily::Proportional)
         .or_default()
         .insert(0, "zpix".to_owned());
+
     ctx.set_fonts(fonts);
+
+    /// The default text styles of the default egui theme.
+    fn default_text_styles() -> BTreeMap<TextStyle, FontId> {
+        use FontFamily::{Monospace, Proportional};
+
+        [
+            (TextStyle::Small, FontId::new(18.0, Proportional)),
+            (TextStyle::Body, FontId::new(25.0, Proportional)),
+            (TextStyle::Button, FontId::new(25.0, Proportional)),
+            (TextStyle::Heading, FontId::new(36.0, Proportional)),
+            (TextStyle::Monospace, FontId::new(24.0, Monospace)),
+        ]
+        .into()
+    }
+
+    let style = Style {
+        text_styles: default_text_styles(),
+        ..Style::default()
+    };
+
+    // ctx.set_style(style)
 }
 
 impl TemplateApp {
@@ -64,6 +88,7 @@ impl TemplateApp {
             return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
         }
 
+        // cc.egui_ctx.set_pixels_per_point(2.0);
         Default::default()
     }
 }
@@ -77,6 +102,7 @@ impl eframe::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // ctx.input_mut().pixels_per_point = 2.0;
         let Self {
             label,
             value,
@@ -92,7 +118,6 @@ impl eframe::App for TemplateApp {
             auto_recruit6,
         } = self;
 
-
         egui::TopBottomPanel::bottom("my_panel").show(ctx, |ui| {
             ui.centered_and_justified(|ui| {
                 ui.label("dd");
@@ -105,27 +130,32 @@ impl eframe::App for TemplateApp {
         // }));
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            // ui.add_sized(200.0, 0.0, )
-            // ui.add_sized(egui::vec2(100.0, 100.0), ui.label("ddd"));
-            // The central panel the region left after adding TopPanel's and SidePanel's
-            // ui.centered(|ui| {
-            //     ui.label("明日方舟速通 1611-12.01");
+            // ui.centered_and_justified(|ui| {
+            //     egui::Grid::new("job111").show(ui, |ui| {
+            //         ui.checkbox(auto_recruit0, "邮件收取");
+            //         ui.checkbox(auto_recruit0, "轮次作战");
+            //         ui.checkbox(auto_recruit0, "访问好友");
+            //         ui.end_row();
+            //     });
             // });
+            ui.centered(|ui| {
+                ui.label("明日方舟速通 611-12.01");
+            });
             ui.horizontal(|ui| {
                 ui.label("作战关卡");
                 let txt = TextEdit::multiline(fight).desired_rows(1);
                 ui.add(txt);
             });
-            ui.shrink_width_to_current();
-            ui.centered(|ui| {
-                ui.label("明日方舟速通 1611-12.01");
-            });
             ui.horizontal(|ui| {
                 ui.label("作战吃药");
-                let txt = TextEdit::singleline(max_stone).desired_rows(1).desired_width(20.0);
+                let txt = TextEdit::singleline(max_stone)
+                    .desired_rows(1)
+                    .desired_width(20.0);
                 ui.add(txt);
                 ui.label("次，吃石头");
-                let txt = TextEdit::singleline(max_drug).desired_rows(1).desired_width(20.0);
+                let txt = TextEdit::singleline(max_drug)
+                    .desired_rows(1)
+                    .desired_width(20.0);
                 ui.add(txt);
                 ui.label("次");
             });
@@ -150,19 +180,24 @@ impl eframe::App for TemplateApp {
                 ui.checkbox(auto_recruit5, "5");
                 ui.checkbox(auto_recruit6, "6");
             });
-            egui::Grid::new("job").show(ui, |ui| {
-                ui.checkbox(auto_recruit0, "邮件收取");
-                ui.checkbox(auto_recruit0, "轮次作战");
-                ui.checkbox(auto_recruit0, "访问好友");
-                ui.end_row();
-                ui.checkbox(auto_recruit0, "邮件收取");
-                ui.checkbox(auto_recruit0, "轮次作战");
-                ui.checkbox(auto_recruit0, "访问好友");
-                ui.end_row();
-                ui.checkbox(auto_recruit0, "邮件收取");
-                ui.checkbox(auto_recruit0, "轮次作战");
-                ui.checkbox(auto_recruit0, "限时活动");
-                ui.end_row();
+
+            ui.horizontal(|ui| {
+                ui.label("任务列表");
+
+                egui::Grid::new("job").show(ui, |ui| {
+                    ui.checkbox(auto_recruit0, "邮件收取");
+                    ui.checkbox(auto_recruit0, "轮次作战");
+                    ui.checkbox(auto_recruit0, "访问好友");
+                    ui.end_row();
+                    ui.checkbox(auto_recruit0, "邮件收取");
+                    ui.checkbox(auto_recruit0, "轮次作战");
+                    ui.checkbox(auto_recruit0, "访问好友");
+                    ui.end_row();
+                    ui.checkbox(auto_recruit0, "邮件收取");
+                    ui.checkbox(auto_recruit0, "轮次作战");
+                    ui.checkbox(auto_recruit0, "限时活动");
+                    ui.end_row();
+                });
             });
             ui.horizontal(|ui| {
                 ui.label("完成之后");
