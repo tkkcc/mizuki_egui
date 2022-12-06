@@ -84,9 +84,9 @@ impl TemplateApp {
 
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
-        if let Some(storage) = cc.storage {
-            return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
-        }
+        // if let Some(storage) = cc.storage {
+        //     return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
+        // }
 
         // cc.egui_ctx.set_pixels_per_point(2.0);
         Default::default()
@@ -102,7 +102,6 @@ impl eframe::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // ctx.input_mut().pixels_per_point = 2.0;
         let Self {
             label,
             value,
@@ -122,102 +121,95 @@ impl eframe::App for TemplateApp {
             ui.centered_and_justified(|ui| {
                 ui.label("dd");
             });
-            // ui.label("Hello World!");
         });
-        // ui.add_sized(egui::vec2(200.0,0.0),egui::CentralPanel::default().show(ctx,|ui|{
-        //     ui.label("dd");
-        //
-        // }));
+
+        let control = |ui: &mut egui::Ui| {
+            ui.vertical(|ui| {
+                ui.centered(|ui| {
+                    ui.label("明日方舟速通 611-12.01");
+                });
+                ui.horizontal(|ui| {
+                    ui.label("作战关卡");
+                    let txt = TextEdit::multiline(fight).desired_rows(1);
+                    ui.add(txt);
+                });
+                ui.horizontal(|ui| {
+                    ui.label("作战吃药");
+                    let txt = TextEdit::singleline(max_stone)
+                        .desired_rows(1)
+                        .desired_width(20.0);
+                    ui.add(txt);
+                    ui.label("次，吃石头");
+                    let txt = TextEdit::singleline(max_drug)
+                        .desired_rows(1)
+                        .desired_width(20.0);
+                    ui.add(txt);
+                    ui.label("次");
+                });
+
+                ui.horizontal_top(|ui| {
+                    ui.label("信用多买");
+                    let txt = TextEdit::multiline(fight)
+                        .desired_rows(1)
+                        .desired_width(75.0);
+                    ui.add(txt);
+                    ui.label("信用少买");
+                    let txt = TextEdit::multiline(fight)
+                        .desired_rows(1)
+                        .desired_width(75.0);
+                    ui.add(txt);
+                });
+                ui.horizontal(|ui| {
+                    ui.label("自动招募");
+                    ui.checkbox(auto_recruit0, "其他");
+                    ui.checkbox(auto_recruit1, "车");
+                    ui.checkbox(auto_recruit4, "4");
+                    ui.checkbox(auto_recruit5, "5");
+                    ui.checkbox(auto_recruit6, "6");
+                });
+
+                ui.horizontal(|ui| {
+                    ui.label("任务列表");
+
+                    egui::Grid::new("job").show(ui, |ui| {
+                        ui.checkbox(auto_recruit0, "邮件收取");
+                        ui.checkbox(auto_recruit0, "轮次作战");
+                        ui.checkbox(auto_recruit0, "访问好友");
+                        ui.end_row();
+                        ui.checkbox(auto_recruit0, "邮件收取");
+                        ui.checkbox(auto_recruit0, "轮次作战");
+                        ui.checkbox(auto_recruit0, "访问好友");
+                        ui.end_row();
+                        ui.checkbox(auto_recruit0, "邮件收取");
+                        ui.checkbox(auto_recruit0, "轮次作战");
+                        ui.checkbox(auto_recruit0, "限时活动");
+                        ui.end_row();
+                    });
+                });
+                ui.horizontal(|ui| {
+                    ui.label("完成之后");
+                    ui.checkbox(auto_recruit0, "返回桌面");
+                    ui.checkbox(auto_recruit1, "关闭游戏");
+                    ui.checkbox(auto_recruit4, "熄屏");
+                });
+                ui.horizontal(|ui| {
+                    ui.label("定时启动");
+                    let txt = TextEdit::multiline(fight).desired_rows(1);
+                    ui.add(txt)
+                });
+                ui.menu_button("My menu", |ui| {
+                    ui.menu_button("My sub-menu", |ui| {
+                        if ui.button("Close the menu").clicked() {
+                            ui.close_menu();
+                        }
+                    });
+                });
+            })
+            .response
+        };
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            // ui.centered_and_justified(|ui| {
-            //     egui::Grid::new("job111").show(ui, |ui| {
-            //         ui.checkbox(auto_recruit0, "邮件收取");
-            //         ui.checkbox(auto_recruit0, "轮次作战");
-            //         ui.checkbox(auto_recruit0, "访问好友");
-            //         ui.end_row();
-            //     });
-            // });
-            ui.centered(|ui| {
-                ui.label("明日方舟速通 611-12.01");
-            });
-            ui.horizontal(|ui| {
-                ui.label("作战关卡");
-                let txt = TextEdit::multiline(fight).desired_rows(1);
-                ui.add(txt);
-            });
-            ui.horizontal(|ui| {
-                ui.label("作战吃药");
-                let txt = TextEdit::singleline(max_stone)
-                    .desired_rows(1)
-                    .desired_width(20.0);
-                ui.add(txt);
-                ui.label("次，吃石头");
-                let txt = TextEdit::singleline(max_drug)
-                    .desired_rows(1)
-                    .desired_width(20.0);
-                ui.add(txt);
-                ui.label("次");
-            });
-
-            ui.horizontal_top(|ui| {
-                ui.label("信用多买");
-                let txt = TextEdit::multiline(fight)
-                    .desired_rows(1)
-                    .desired_width(75.0);
-                ui.add(txt);
-                ui.label("信用少买");
-                let txt = TextEdit::multiline(fight)
-                    .desired_rows(1)
-                    .desired_width(75.0);
-                ui.add(txt);
-            });
-            ui.horizontal(|ui| {
-                ui.label("自动招募");
-                ui.checkbox(auto_recruit0, "其他");
-                ui.checkbox(auto_recruit1, "车");
-                ui.checkbox(auto_recruit4, "4");
-                ui.checkbox(auto_recruit5, "5");
-                ui.checkbox(auto_recruit6, "6");
-            });
-
-            ui.horizontal(|ui| {
-                ui.label("任务列表");
-
-                egui::Grid::new("job").show(ui, |ui| {
-                    ui.checkbox(auto_recruit0, "邮件收取");
-                    ui.checkbox(auto_recruit0, "轮次作战");
-                    ui.checkbox(auto_recruit0, "访问好友");
-                    ui.end_row();
-                    ui.checkbox(auto_recruit0, "邮件收取");
-                    ui.checkbox(auto_recruit0, "轮次作战");
-                    ui.checkbox(auto_recruit0, "访问好友");
-                    ui.end_row();
-                    ui.checkbox(auto_recruit0, "邮件收取");
-                    ui.checkbox(auto_recruit0, "轮次作战");
-                    ui.checkbox(auto_recruit0, "限时活动");
-                    ui.end_row();
-                });
-            });
-            ui.horizontal(|ui| {
-                ui.label("完成之后");
-                ui.checkbox(auto_recruit0, "返回桌面");
-                ui.checkbox(auto_recruit1, "关闭游戏");
-                ui.checkbox(auto_recruit4, "熄屏");
-            });
-            ui.horizontal(|ui| {
-                ui.label("定时启动");
-                let txt = TextEdit::multiline(fight).desired_rows(1);
-                ui.add(txt)
-            });
-            ui.menu_button("My menu", |ui| {
-                ui.menu_button("My sub-menu", |ui| {
-                    if ui.button("Close the menu").clicked() {
-                        ui.close_menu();
-                    }
-                });
-            });
-            egui::warn_if_debug_build(ui);
+            ui.vertical_centered(|ui| ui.add_sized(egui::vec2(300.0, 0.0), control));
         });
 
         if false {
