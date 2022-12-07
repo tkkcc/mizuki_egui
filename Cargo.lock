@@ -588,6 +588,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "derivative"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fcc3dd5e9e9c0b295d6e1e4d811fb6f157d5ffd784b8d202fc62eac8035a770b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "dispatch"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -683,7 +694,6 @@ name = "egui_extras"
 version = "0.19.0"
 source = "git+https://github.com/emilk/egui?branch=master#5effc68ba4f6dc0f9f9792193bb6e0eeca6dccef"
 dependencies = [
- "chrono",
  "egui",
  "serde",
 ]
@@ -1150,6 +1160,7 @@ version = "0.0.1"
 dependencies = [
  "chrono",
  "console_error_panic_hook",
+ "derivative",
  "eframe",
  "egui",
  "egui_extras",
