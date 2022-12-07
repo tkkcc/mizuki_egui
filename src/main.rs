@@ -9,12 +9,11 @@ fn main() {
 
     let native_options = eframe::NativeOptions::default();
     eframe::run_native(
-        "eframe template",
+        "mizuki_ui",
         native_options,
-        Box::new(|cc| Box::new(eframe_template::TemplateApp::new(cc))),
+        Box::new(|cc| Box::new(mizuki_ui::MyApp::new(cc))),
     );
 }
-
 
 #[cfg(target_arch = "wasm32")]
 use eframe::wasm_bindgen::{self, prelude::*};
@@ -30,14 +29,14 @@ pub async fn start() {
 
     let web_options = eframe::WebOptions::default();
     eframe::start_web(
-        "the_canvas_id", // hardcode it
+        "app",
         web_options,
-        Box::new(|cc| Box::new(eframe_template::TemplateApp::new(cc))),
-    ).await.expect("failed to start eframe");
+        Box::new(|cc| Box::new(mizuki_ui::MyApp::new(cc))),
+    )
+    .await
+    .expect("failed to start eframe");
 }
 
 // when compiling to web using trunk.
 #[cfg(target_arch = "wasm32")]
-fn main() {
-
-}
+fn main() {}

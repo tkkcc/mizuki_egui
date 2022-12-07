@@ -1,19 +1,15 @@
-use std::collections::BTreeMap;
+use egui::{FontData, FontDefinitions, FontFamily, TextEdit};
 
-use egui::{DragValue, FontData, FontDefinitions, FontFamily, FontId, Style, TextEdit, TextStyle};
+enum Mode {
+    Daily,
+    Roguelike,
+    Setting,
+}
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize, Default)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
-pub struct TemplateApp {
-    // Example stuff:
-    label: String,
-
-    // this how you opt-out of serialization of a member
-    // #[serde(skip)]
-    value: f32,
-    checked: bool,
-    text: String,
+pub struct MyApp {
     fight: String,
     max_drug: String,
     max_stone: String,
@@ -22,27 +18,15 @@ pub struct TemplateApp {
     auto_recruit4: bool,
     auto_recruit5: bool,
     auto_recruit6: bool,
+    date: String,
+    setting_layout: bool
 }
-//
-// impl Default for TemplateApp {
-//     fn default() -> Self {
-//         Self {
-//             // Example stuff:
-//             label: "Hello World!".to_owned(),
-//             value: 0.1,
-//             checked: false,
-//             text: String::from("ok"),
-//             fight: String::from("jm hd ce ls ap pr"),
-//         }
-//     }
-// }
 
-fn setup_custom_fonts(ctx: &egui::Context) {
+pub fn set_style(ctx: &egui::Context) {
     let mut fonts = FontDefinitions::default();
     fonts.font_data.insert(
         "zpix".to_owned(),
         FontData::from_static(include_bytes!("../zpix.ttf")),
-        // egui::FontData::from_static(include_bytes!("/home/bilabila/.local/share/fonts/simhei.ttf")),
     );
     fonts
         .families
@@ -52,95 +36,64 @@ fn setup_custom_fonts(ctx: &egui::Context) {
 
     ctx.set_fonts(fonts);
 
-    /// The default text styles of the default egui theme.
-    fn default_text_styles() -> BTreeMap<TextStyle, FontId> {
-        use FontFamily::{Monospace, Proportional};
+    // /// The default text styles of the default egui theme.
+    // use std::collections::BTreeMap;
+    // fn default_text_styles() -> BTreeMap<TextStyle, FontId> {
+    //     use FontFamily::{Monospace, Proportional};
+    //
+    //     [
+    //         (TextStyle::Small, FontId::new(18.0, Proportional)),
+    //         (TextStyle::Body, FontId::new(25.0, Proportional)),
+    //         (TextStyle::Button, FontId::new(25.0, Proportional)),
+    //         (TextStyle::Heading, FontId::new(36.0, Proportional)),
+    //         (TextStyle::Monospace, FontId::new(24.0, Monospace)),
+    //     ]
+    //     .into()
+    // }
 
-        [
-            (TextStyle::Small, FontId::new(18.0, Proportional)),
-            (TextStyle::Body, FontId::new(25.0, Proportional)),
-            (TextStyle::Button, FontId::new(25.0, Proportional)),
-            (TextStyle::Heading, FontId::new(36.0, Proportional)),
-            (TextStyle::Monospace, FontId::new(24.0, Monospace)),
-        ]
-        .into()
-    }
-
-    let style = Style {
-        text_styles: default_text_styles(),
-        ..Style::default()
-    };
-
-    // ctx.set_style(style)
+    let mut style = (*ctx.style()).clone();
+    style.animation_time = 0.0;
+    ctx.set_style(style)
 }
 
-impl TemplateApp {
+impl MyApp {
     /// Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        setup_custom_fonts(&cc.egui_ctx);
-        // cc.egui_ctx.set_fonts(font_definitions);
-        // This is also where you can customized the look at feel of egui using
-        // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
-
-        // Load previous app state (if any).
-        // Note that you must enable the `persistence` feature for this to work.
-        // if let Some(storage) = cc.storage {
-        //     return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
-        // }
-
-        // cc.egui_ctx.set_pixels_per_point(2.0);
+        set_style(&cc.egui_ctx);
         Default::default()
     }
 }
 
-impl eframe::App for TemplateApp {
-    /// Called by the frame work to save state before shutdown.
-    // fn save(&mut self, storage: &mut dyn eframe::Storage) {
-    //     eframe::set_value(storage, eframe::APP_KEY, self);
-    // }
-
-    /// Called each time the UI needs repainting, which may be many times per second.
-    /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
+impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let Self {
-            label,
-            value,
-            checked,
-            text,
-            fight,
-            max_drug,
-            max_stone,
-            auto_recruit0,
-            auto_recruit1,
-            auto_recruit4,
-            auto_recruit5,
-            auto_recruit6,
-        } = self;
-
         egui::TopBottomPanel::bottom("my_panel").show(ctx, |ui| {
-            ui.centered_and_justified(|ui| {
-                ui.label("dd");
+            ui.vertical_centered(|ui| {
+
+
+                // let txt = RichText::new("Large and underlined").size(f32::INFINITY);
+                ui.label("启用账号");
+                if ui.button("启动").clicked() {}
             });
         });
 
         let control = |ui: &mut egui::Ui| {
             ui.vertical(|ui| {
-                ui.centered(|ui| {
+                ui.vertical_centered(|ui| {
                     ui.label("明日方舟速通 611-12.01");
                 });
                 ui.horizontal(|ui| {
                     ui.label("作战关卡");
-                    let txt = TextEdit::multiline(fight).desired_rows(1);
+                    let txt = TextEdit::multiline(&mut self.fight).desired_rows(1);
                     ui.add(txt);
                 });
                 ui.horizontal(|ui| {
                     ui.label("作战吃药");
-                    let txt = TextEdit::singleline(max_stone)
+                    let txt = TextEdit::singleline(&mut self.max_stone)
                         .desired_rows(1)
                         .desired_width(20.0);
                     ui.add(txt);
                     ui.label("次，吃石头");
-                    let txt = TextEdit::singleline(max_drug)
+                    let txt = TextEdit::singleline(&mut self.max_drug)
                         .desired_rows(1)
                         .desired_width(20.0);
                     ui.add(txt);
@@ -149,60 +102,69 @@ impl eframe::App for TemplateApp {
 
                 ui.horizontal_top(|ui| {
                     ui.label("信用多买");
-                    let txt = TextEdit::multiline(fight)
+                    let txt = TextEdit::multiline(&mut self.fight)
                         .desired_rows(1)
                         .desired_width(75.0);
                     ui.add(txt);
                     ui.label("信用少买");
-                    let txt = TextEdit::multiline(fight)
+                    let txt = TextEdit::multiline(&mut self.fight)
                         .desired_rows(1)
                         .desired_width(75.0);
                     ui.add(txt);
                 });
+
                 ui.horizontal(|ui| {
                     ui.label("自动招募");
-                    ui.checkbox(auto_recruit0, "其他");
-                    ui.checkbox(auto_recruit1, "车");
-                    ui.checkbox(auto_recruit4, "4");
-                    ui.checkbox(auto_recruit5, "5");
-                    ui.checkbox(auto_recruit6, "6");
+                    ui.checkbox(&mut self.auto_recruit0, "其他");
+                    ui.checkbox(&mut self.auto_recruit0, "车");
+                    ui.checkbox(&mut self.auto_recruit0, "4");
+                    ui.checkbox(&mut self.auto_recruit0, "5");
+                    ui.checkbox(&mut self.auto_recruit6, "6");
                 });
 
                 ui.horizontal(|ui| {
                     ui.label("任务列表");
 
                     egui::Grid::new("job").show(ui, |ui| {
-                        ui.checkbox(auto_recruit0, "邮件收取");
-                        ui.checkbox(auto_recruit0, "轮次作战");
-                        ui.checkbox(auto_recruit0, "访问好友");
+                        ui.checkbox(&mut self.auto_recruit0, "邮件收取");
+                        ui.checkbox(&mut self.auto_recruit0, "轮次作战");
+                        ui.checkbox(&mut self.auto_recruit0, "访问好友");
                         ui.end_row();
-                        ui.checkbox(auto_recruit0, "邮件收取");
-                        ui.checkbox(auto_recruit0, "轮次作战");
-                        ui.checkbox(auto_recruit0, "访问好友");
+                        ui.checkbox(&mut self.auto_recruit0, "邮件收取");
+                        ui.checkbox(&mut self.auto_recruit0, "轮次作战");
+                        ui.checkbox(&mut self.auto_recruit0, "访问好友");
                         ui.end_row();
-                        ui.checkbox(auto_recruit0, "邮件收取");
-                        ui.checkbox(auto_recruit0, "轮次作战");
-                        ui.checkbox(auto_recruit0, "限时活动");
+                        ui.checkbox(&mut self.auto_recruit0, "邮件收取");
+                        ui.checkbox(&mut self.auto_recruit0, "轮次作战");
+                        ui.checkbox(&mut self.auto_recruit0, "限时活动");
                         ui.end_row();
                     });
                 });
+
+                ui.horizontal(|ui| {
+                    ui.label("允许时间");
+                    egui::Grid::new("allow_week").show(ui, |ui| {
+                        ui.checkbox(&mut self.auto_recruit0, "周一");
+                        ui.checkbox(&mut self.auto_recruit0, "周二");
+                        ui.checkbox(&mut self.auto_recruit0, "周三");
+                        ui.checkbox(&mut self.auto_recruit0, "周四");
+                        ui.end_row();
+                        ui.checkbox(&mut self.auto_recruit0, "周五");
+                        ui.checkbox(&mut self.auto_recruit0, "周六");
+                        ui.checkbox(&mut self.auto_recruit0, "周日");
+                    });
+                });
+
                 ui.horizontal(|ui| {
                     ui.label("完成之后");
-                    ui.checkbox(auto_recruit0, "返回桌面");
-                    ui.checkbox(auto_recruit1, "关闭游戏");
-                    ui.checkbox(auto_recruit4, "熄屏");
+                    ui.checkbox(&mut self.auto_recruit0, "返回桌面");
+                    ui.checkbox(&mut self.auto_recruit0, "关闭游戏");
+                    ui.checkbox(&mut self.auto_recruit0, "熄屏");
                 });
                 ui.horizontal(|ui| {
                     ui.label("定时启动");
-                    let txt = TextEdit::multiline(fight).desired_rows(1);
+                    let txt = TextEdit::multiline(&mut self.fight).desired_rows(1);
                     ui.add(txt)
-                });
-                ui.menu_button("My menu", |ui| {
-                    ui.menu_button("My sub-menu", |ui| {
-                        if ui.button("Close the menu").clicked() {
-                            ui.close_menu();
-                        }
-                    });
                 });
             })
             .response

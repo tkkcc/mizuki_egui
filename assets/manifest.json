@@ -1,6 +1,6 @@
 {
-  "name": "egui Template PWA",
-  "short_name": "egui-template-pwa",
+  "name": "Mizuki UI PWA",
+  "short_name": "mizuki-ui-pwa",
   "icons": [
     {
       "src": "./icon-256.png",
