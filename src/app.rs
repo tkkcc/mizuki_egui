@@ -1,6 +1,6 @@
 use derivative;
 use derivative::Derivative;
-use egui::{DragValue, FontData, FontDefinitions, FontFamily, ScrollArea, TextEdit};
+use egui::{DragValue, FontData, FontDefinitions, FontFamily, TextEdit};
 use egui_extras::{Column, TableBuilder};
 use serde::{Deserialize, Serialize};
 

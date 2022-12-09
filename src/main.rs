@@ -15,12 +15,9 @@ fn main() {
     );
 }
 
+// when compiling to web using trunk.
 #[cfg(target_arch = "wasm32")]
-use eframe::wasm_bindgen::{self, prelude::*};
-
-#[cfg(target_arch = "wasm32")]
-#[wasm_bindgen(start)]
-pub async fn start() {
+fn main() {
     // Make sure panics are logged using `console.error`.
     console_error_panic_hook::set_once();
 
@@ -28,15 +25,14 @@ pub async fn start() {
     tracing_wasm::set_as_global_default();
 
     let web_options = eframe::WebOptions::default();
-    eframe::start_web(
-        "app",
-        web_options,
-        Box::new(|cc| Box::new(mizuki_ui::MyApp::new(cc))),
-    )
-    .await
-    .expect("failed to start eframe");
-}
 
-// when compiling to web using trunk.
-#[cfg(target_arch = "wasm32")]
-fn main() {}
+    wasm_bindgen_futures::spawn_local(async {
+        eframe::start_web(
+            "app", // hardcode it
+            web_options,
+            Box::new(|cc| Box::new(mizuki_ui::MyApp::new(cc))),
+        )
+        .await
+        .expect("failed to start eframe");
+    });
+}

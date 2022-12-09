@@ -16,7 +16,7 @@ egui_extras = { git = "https://github.com/emilk/egui", branch = "master"}
 serde = { version = "1", features = ["derive"] }
 wasm-bindgen-futures = "0.4"
 chrono = {version="0.4",features = ["serde"]}
-derivative = "2.2.0"
+derivative = "2.2"
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
