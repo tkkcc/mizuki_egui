@@ -8,6 +8,9 @@ edition = "2021"
 [dependencies]
 # egui = "0.19.0"
 # eframe = { version = "0.19.0", features = ["persistence"] }
+# egui = { path = "../egui/crates/egui" }
+# eframe = { path = "../egui/crates/eframe" }
+# egui_extras = { path = "../egui/crates/egui_extras" }
 egui = { git = "https://github.com/emilk/egui", branch = "master" }
 eframe = { git = "https://github.com/emilk/egui", branch = "master" }
 egui_extras = { git = "https://github.com/emilk/egui", branch = "master"}
@@ -17,6 +20,7 @@ serde = { version = "1", features = ["derive"] }
 wasm-bindgen-futures = "0.4"
 chrono = {version="0.4",features = ["serde"]}
 derivative = "2.2"
+derive_builder = "0.12.0"
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

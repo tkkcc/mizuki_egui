@@ -1,8 +1,11 @@
+use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 use derivative;
 use derivative::Derivative;
-use egui::{DragValue, FontData, FontDefinitions, FontFamily, TextEdit};
+use egui::{widgets, DragValue, FontData, FontDefinitions, FontFamily, Response, TextEdit};
 use egui_extras::{Column, TableBuilder};
 use serde::{Deserialize, Serialize};
+
+use derive_builder::Builder;
 
 const WIDTH: f32 = 320.0;
 const HEIGHT: f32 = 300.0;
@@ -55,97 +58,97 @@ impl AccountMode {
     }
 }
 
-#[derive(serde::Deserialize, serde::Serialize, Clone, Derivative)]
-#[derivative(Default)]
+#[derive(Builder, Deserialize, Serialize, Clone, Default)]
 #[serde(default)]
+#[builder(default)]
 pub struct Account {
-    #[derivative(Default(value = "9999"))]
+    #[builder(default = "9999")]
     zl_max_coin: usize,
-    #[derivative(Default(value = "9999"))]
+    #[builder(default = "9999")]
     zl_max_level: usize,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     zl_coin: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     zl_level: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     zl_no_waste: bool,
     mode: AccountMode,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     inherit: bool,
     inherit_index: usize,
     username: String,
     password: String,
     server: Server,
+    #[builder(default = "\"jm hd ce ls ap pr\".to_string()")]
     fight: String,
     max_drug: usize,
+    #[builder(default = "\"0 1 1 1 9 9 99\".to_string()")]
+    max_drug_day: String,
     max_stone: usize,
     prefer_goods: String,
     dislike_goods: String,
 
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     recruit0: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     recruit1: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     recruit4: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     recruit5: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     recruit6: bool,
 
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     recruit_recruit1: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     recruit_recruit4: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     recruit_recruit5: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     recruit_recruit6: bool,
-    #[derivative(Default(value = "true"))]
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     job_mail: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     job_fight: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     job_friend: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     job_gain: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     job_shift: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     job_manu: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     job_clue: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     job_assist: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     job_shop: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     job_recruit: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     job_task: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     job_activity: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     allow_monday: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     allow_tuesday: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     allow_wednesday: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     allow_thursday: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     allow_friday: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     allow_saturday: bool,
-    #[derivative(Default(value = "true"))]
+    #[builder(default = "true")]
     allow_sunday: bool,
-}
-impl Account {
-    fn inherit(mut self, inherit: bool) -> Self {
-        self.inherit = inherit;
-        self
-    }
+
+    // #[builder(default = "\"2022-01-01 00:00\".to_string()")]
+    #[builder(default = "Local::now().format(\"%Y-%m-%d %H:%M\").to_string()")]
+    allow_after: String,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Derivative)]
@@ -156,7 +159,6 @@ pub struct Setting {
     captcha_password: String,
     max_login_times_15min: usize,
     max_fail_fight_times: usize,
-    max_drug_times_day: String,
     qq_notify: String,
     qq_notify_server: String,
     qq_notify_mail: bool,
@@ -200,8 +202,8 @@ pub struct MyApp {
 
 impl Default for MyApp {
     fn default() -> Self {
-        let mut account = vec![Account::default().inherit(false)];
-        account.extend(vec![Account::default(); 9999]);
+        let mut account = vec![AccountBuilder::default().inherit(false).build().unwrap()];
+        account.extend(vec![AccountBuilder::default().build().unwrap(); 9999]);
         let len = account.len();
 
         Self {
@@ -211,56 +213,56 @@ impl Default for MyApp {
             multi_account_choice: format!("0-{}", len - 1).into(),
             setting: Setting::default(),
 
-            layout: Layout::Setting,
+            layout: Layout::Account,
             end_restart: false,
         }
     }
 }
 
-pub fn set_style(ctx: &egui::Context) {
-    let mut fonts = FontDefinitions::default();
-    fonts.font_data.insert(
-        "zpix".to_owned(),
-        FontData::from_static(include_bytes!("../zpix.ttf")),
-    );
-    fonts
-        .families
-        .entry(FontFamily::Proportional)
-        .or_default()
-        .insert(0, "zpix".to_owned());
-    fonts
-        .families
-        .entry(FontFamily::Monospace)
-        .or_default()
-        .insert(0, "zpix".to_owned());
-
-    ctx.set_fonts(fonts);
-
-    // /// The default text styles of the default egui theme.
-    // use std::collections::BTreeMap;
-    // fn default_text_styles() -> BTreeMap<TextStyle, FontId> {
-    //     use FontFamily::{Monospace, Proportional};
-    //
-    //     [
-    //         (TextStyle::Small, FontId::new(18.0, Proportional)),
-    //         (TextStyle::Body, FontId::new(25.0, Proportional)),
-    //         (TextStyle::Button, FontId::new(25.0, Proportional)),
-    //         (TextStyle::Heading, FontId::new(36.0, Proportional)),
-    //         (TextStyle::Monospace, FontId::new(24.0, Monospace)),
-    //     ]
-    //     .into()
-    // }
-
-    let mut style = (*ctx.style()).clone();
-    style.animation_time = 0.0;
-    ctx.set_style(style)
-}
-
 impl MyApp {
     /// Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        set_style(&cc.egui_ctx);
+        Self::set_style(&cc.egui_ctx);
         Default::default()
+    }
+
+    pub fn set_style(ctx: &egui::Context) {
+        let mut fonts = FontDefinitions::default();
+        fonts.font_data.insert(
+            "zpix".to_owned(),
+            FontData::from_static(include_bytes!("../zpix.ttf")),
+        );
+        fonts
+            .families
+            .entry(FontFamily::Proportional)
+            .or_default()
+            .insert(0, "zpix".to_owned());
+        fonts
+            .families
+            .entry(FontFamily::Monospace)
+            .or_default()
+            .insert(0, "zpix".to_owned());
+
+        ctx.set_fonts(fonts);
+
+        // /// The default text styles of the default egui theme.
+        // use std::collections::BTreeMap;
+        // fn default_text_styles() -> BTreeMap<TextStyle, FontId> {
+        //     use FontFamily::{Monospace, Proportional};
+        //
+        //     [
+        //         (TextStyle::Small, FontId::new(18.0, Proportional)),
+        //         (TextStyle::Body, FontId::new(25.0, Proportional)),
+        //         (TextStyle::Button, FontId::new(25.0, Proportional)),
+        //         (TextStyle::Heading, FontId::new(36.0, Proportional)),
+        //         (TextStyle::Monospace, FontId::new(24.0, Monospace)),
+        //     ]
+        //     .into()
+        // }
+
+        let mut style = (*ctx.style()).clone();
+        style.animation_time = 0.0;
+        ctx.set_style(style)
     }
 
     fn one_account(ui: &mut egui::Ui, state: &mut Self, idx: usize) {
@@ -349,6 +351,8 @@ impl MyApp {
                 ui.add(DragValue::new(&mut state.account[idx].max_drug).suffix("次"));
                 ui.label("石头");
                 ui.add(DragValue::new(&mut state.account[idx].max_stone).suffix("次"));
+                ui.label("6至0天药");
+                ui.text_edit_singleline(&mut state.account[idx].max_drug_day);
             });
         });
         ui.add_enabled_ui(state.account[idx].job_shop, |ui| {
@@ -381,36 +385,63 @@ impl MyApp {
         ui.horizontal(|ui| {
             ui.label("任务");
 
-            egui::Grid::new(format!("job{idx}")).show(ui, |ui| {
-                ui.checkbox(&mut state.account[idx].job_mail, "邮件");
-                ui.checkbox(&mut state.account[idx].job_fight, "作战");
-                ui.checkbox(&mut state.account[idx].job_friend, "好友");
-                ui.checkbox(&mut state.account[idx].job_gain, "收菜");
-                ui.checkbox(&mut state.account[idx].job_shift, "换班");
-                ui.end_row();
-                ui.checkbox(&mut state.account[idx].job_manu, "加速");
-                ui.checkbox(&mut state.account[idx].job_clue, "线索");
-                ui.checkbox(&mut state.account[idx].job_assist, "副手");
-                ui.checkbox(&mut state.account[idx].job_shop, "信交");
-                ui.checkbox(&mut state.account[idx].job_recruit, "公招");
-                ui.end_row();
-                ui.checkbox(&mut state.account[idx].job_task, "任务");
-                ui.checkbox(&mut state.account[idx].job_activity, "活动");
-                ui.end_row();
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.checkbox(&mut state.account[idx].job_mail, "邮件");
+                    ui.checkbox(&mut state.account[idx].job_fight, "作战");
+                    ui.checkbox(&mut state.account[idx].job_friend, "好友");
+                    ui.checkbox(&mut state.account[idx].job_gain, "收菜");
+                    ui.checkbox(&mut state.account[idx].job_shift, "换班");
+                });
+                ui.horizontal(|ui| {
+                    ui.checkbox(&mut state.account[idx].job_manu, "加速");
+                    ui.checkbox(&mut state.account[idx].job_clue, "线索");
+                    ui.checkbox(&mut state.account[idx].job_assist, "副手");
+                    ui.checkbox(&mut state.account[idx].job_shop, "信交");
+                    ui.checkbox(&mut state.account[idx].job_recruit, "公招");
+                });
+                ui.horizontal(|ui| {
+                    ui.checkbox(&mut state.account[idx].job_task, "任务");
+                    ui.checkbox(&mut state.account[idx].job_activity, "活动");
+                });
             });
         });
 
         ui.horizontal(|ui| {
-            ui.label("允许");
-            egui::Grid::new(format!("allow_weekday{idx}")).show(ui, |ui| {
-                ui.checkbox(&mut state.account[idx].allow_monday, "周一");
-                ui.checkbox(&mut state.account[idx].allow_tuesday, "周二");
-                ui.checkbox(&mut state.account[idx].allow_wednesday, "周三");
-                ui.checkbox(&mut state.account[idx].allow_thursday, "周四");
-                ui.checkbox(&mut state.account[idx].allow_friday, "周五");
-                ui.end_row();
-                ui.checkbox(&mut state.account[idx].allow_saturday, "周六");
-                ui.checkbox(&mut state.account[idx].allow_sunday, "周日");
+            ui.label("时间");
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    let txt = TextEdit::singleline(&mut state.account[idx].allow_after)
+                        .desired_width(120.0);
+                    let response = ui.add(txt);
+                    if response.lost_focus() {
+                        let dt = &state.account[idx].allow_after;
+                        let dt = NaiveDateTime::parse_from_str(dt, "%Y-%m-%d %H:%M")
+                            .map(|dt| Local.from_local_datetime(&dt).unwrap())
+                            .unwrap_or(Local::now());
+                        state.account[idx].allow_after = dt.format("%Y-%m-%d %H:%M").to_string()
+                    }
+                    ui.label("后");
+                    ui.checkbox(&mut state.account[idx].allow_monday, "周一");
+                    ui.checkbox(&mut state.account[idx].allow_tuesday, "周二");
+                });
+                ui.horizontal(|ui| {
+                    ui.checkbox(&mut state.account[idx].allow_wednesday, "周三");
+                    ui.checkbox(&mut state.account[idx].allow_thursday, "周四");
+                    ui.checkbox(&mut state.account[idx].allow_friday, "周五");
+                    ui.checkbox(&mut state.account[idx].allow_saturday, "周六");
+                    ui.checkbox(&mut state.account[idx].allow_sunday, "周日");
+
+                    // use chrono::{offset::Utc, DateTime, NaiveDate, NaiveDateTime, NaiveTime};
+                    // use egui_datepicker::DatePicker;
+
+                    // let mut date = Utc::now();
+                    // let date: DateTime<Utc> = Utc::now();
+                    // let mut date: chrono::naive::NaiveDateTime = Utc::now().naive_utc();
+
+                    // ui.add(DatePicker::<RangeInclusive<NaiveDateTime>>::new("super_unique_id", &mut date));
+                    // ui.add(DatePicker::new("datepicker-unique-id", &mut date));
+                });
             });
         });
     }
@@ -462,13 +493,13 @@ impl MyApp {
             ui.add(DragValue::new(&mut state.setting.max_login_times_15min).suffix("次"));
             ui.label("后跳过");
         });
-        ui.horizontal(|ui| {
-            ui.label("同一账号6至0天理智药分别吃");
-            let txt =
-                TextEdit::singleline(&mut state.setting.max_drug_times_day).desired_width(100.0);
-            ui.add(txt);
-            ui.label("个")
-        });
+        // ui.horizontal(|ui| {
+        //     ui.label("同一账号6至0天理智药分别吃");
+        //     let txt =
+        //         TextEdit::singleline(&mut state.setting.max_drug_times_day).desired_width(100.0);
+        //     ui.add(txt);
+        //     ui.label("个")
+        // });
         ui.horizontal(|ui| {
             ui.label("通知账号");
             ui.text_edit_singleline(&mut state.setting.qq_notify);
