@@ -421,7 +421,7 @@ impl MyApp {
                             .unwrap_or(Local::now());
                         state.account[idx].allow_after = dt.format("%Y-%m-%d %H:%M").to_string()
                     }
-                    ui.label("后");
+                    ui.label("起");
                     ui.checkbox(&mut state.account[idx].allow_monday, "周一");
                     ui.checkbox(&mut state.account[idx].allow_tuesday, "周二");
                 });
@@ -485,7 +485,7 @@ impl MyApp {
         });
         ui.horizontal(|ui| {
             ui.label("同一关卡连续导航失败或代理失败出现");
-            ui.add(DragValue::new(&mut state.setting.max_fail_fight_times).suffix("次"));
+            ui.add(DragValue::new(&mut state.setting.max_fail_fight_times).suffix("次").speed(1.0));
             ui.label("后跳过");
         });
         ui.horizontal(|ui| {
