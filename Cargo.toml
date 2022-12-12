@@ -8,12 +8,12 @@ edition = "2021"
 [dependencies]
 # egui = "0.19.0"
 # eframe = { version = "0.19.0", features = ["persistence"] }
-egui = { path = "../egui/crates/egui" }
-eframe = { path = "../egui/crates/eframe" }
-egui_extras = { path = "../egui/crates/egui_extras" }
-# egui = { git = "https://github.com/emilk/egui", branch = "master" }
-# eframe = { git = "https://github.com/emilk/egui", branch = "master" }
-# egui_extras = { git = "https://github.com/emilk/egui", branch = "master"}
+# egui = { path = "../egui/crates/egui" }
+# eframe = { path = "../egui/crates/eframe" }
+# egui_extras = { path = "../egui/crates/egui_extras" }
+egui = { git = "https://github.com/emilk/egui", branch = "master" }
+eframe = { git = "https://github.com/emilk/egui", branch = "master" }
+egui_extras = { git = "https://github.com/emilk/egui", branch = "master"}
 
 # You only need serde if you want app persistence:
 serde = { version = "1", features = ["derive"] }

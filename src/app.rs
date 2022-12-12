@@ -1,3 +1,4 @@
+use chrono::Timelike;
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 use derivative;
 use derivative::Derivative;
@@ -147,7 +148,9 @@ pub struct Account {
     allow_sunday: bool,
 
     // #[builder(default = "\"2022-01-01 00:00\".to_string()")]
-    #[builder(default = "Local::now().format(\"%Y-%m-%d %H:%M\").to_string()")]
+    #[builder(
+        default = "Local::now().with_minute(0).and_then(|x| x.with_hour(0)).unwrap().format(\"%Y-%m-%d %H:%M\").to_string()"
+    )]
     allow_after: String,
 }
 
@@ -204,13 +207,13 @@ impl Default for MyApp {
     fn default() -> Self {
         let mut account = vec![AccountBuilder::default().inherit(false).build().unwrap()];
         account.extend(vec![AccountBuilder::default().build().unwrap(); 9999]);
-        let len = account.len();
+        let total = account.len();
 
         Self {
             account,
             scroll_to_account: 0,
             multi_account: false,
-            multi_account_choice: format!("0-{}", len - 1).into(),
+            multi_account_choice: format!("0-{}", total - 1).into(),
             setting: Setting::default(),
 
             layout: Layout::Account,
@@ -299,7 +302,12 @@ impl MyApp {
                     state.account[idx].inherit = !state.account[idx].inherit;
                 }
                 if state.account[idx].inherit {
-                    ui.add(DragValue::new(&mut state.account[idx].inherit_index).prefix("账号"));
+                    let total = state.account.len();
+                    ui.add(
+                        DragValue::new(&mut state.account[idx].inherit_index)
+                            .prefix("账号")
+                            .clamp_range(0..=total - 1),
+                    );
                 }
             }
         });
@@ -317,11 +325,9 @@ impl MyApp {
     fn one_account_zl(ui: &mut egui::Ui, state: &mut Self, idx: usize) {
         ui.horizontal(|ui| {
             ui.checkbox(&mut state.account[idx].zl_level, "等级(蜡烛)");
-            ui.add(DragValue::new(&mut state.account[idx].zl_max_level));
-            // });
-            // ui.horizontal(|ui| {
+            ui.add(DragValue::new(&mut state.account[idx].zl_max_level).clamp_range(0..=9999));
             ui.checkbox(&mut state.account[idx].zl_coin, "源石锭");
-            ui.add(DragValue::new(&mut state.account[idx].zl_max_coin));
+            ui.add(DragValue::new(&mut state.account[idx].zl_max_coin).clamp_range(0..=9999));
         });
         ui.checkbox(&mut state.account[idx].zl_no_waste, "先做日常");
     }
@@ -348,9 +354,17 @@ impl MyApp {
             });
             ui.horizontal(|ui| {
                 ui.label("吃药");
-                ui.add(DragValue::new(&mut state.account[idx].max_drug).suffix("次"));
+                ui.add(
+                    DragValue::new(&mut state.account[idx].max_drug)
+                        .clamp_range(0..=99)
+                        .suffix("次"),
+                );
                 ui.label("石头");
-                ui.add(DragValue::new(&mut state.account[idx].max_stone).suffix("次"));
+                ui.add(
+                    DragValue::new(&mut state.account[idx].max_stone)
+                        .clamp_range(0..=99)
+                        .suffix("次"),
+                );
                 ui.label("6至0天药");
                 ui.text_edit_singleline(&mut state.account[idx].max_drug_day);
             });
@@ -418,7 +432,12 @@ impl MyApp {
                         let dt = &state.account[idx].allow_after;
                         let dt = NaiveDateTime::parse_from_str(dt, "%Y-%m-%d %H:%M")
                             .map(|dt| Local.from_local_datetime(&dt).unwrap())
-                            .unwrap_or(Local::now());
+                            .unwrap_or(
+                                Local::now()
+                                    .with_hour(0)
+                                    .and_then(|x| x.with_minute(0))
+                                    .unwrap(),
+                            );
                         state.account[idx].allow_after = dt.format("%Y-%m-%d %H:%M").to_string()
                     }
                     ui.label("起");
@@ -484,13 +503,21 @@ impl MyApp {
             ui.text_edit_singleline(&mut state.setting.captcha_password);
         });
         ui.horizontal(|ui| {
-            ui.label("同一关卡连续导航失败或代理失败出现");
-            ui.add(DragValue::new(&mut state.setting.max_fail_fight_times).suffix("次").speed(1.0));
+            ui.label("同一关卡连续导航或代理失败出现");
+            ui.add(
+                DragValue::new(&mut state.setting.max_fail_fight_times)
+                    .suffix("次")
+                    .clamp_range(0..=99),
+            );
             ui.label("后跳过");
         });
         ui.horizontal(|ui| {
-            ui.label("同一账号登录界面15分钟出现");
-            ui.add(DragValue::new(&mut state.setting.max_login_times_15min).suffix("次"));
+            ui.label("同一账号登录界面15分钟内出现");
+            ui.add(
+                DragValue::new(&mut state.setting.max_login_times_15min)
+                    .suffix("次")
+                    .clamp_range(0..=99),
+            );
             ui.label("后跳过");
         });
         // ui.horizontal(|ui| {
@@ -558,6 +585,7 @@ impl eframe::App for MyApp {
                                         scroll_to_account_changed = ui
                                             .add(
                                                 DragValue::new(&mut self.scroll_to_account)
+                                                    .clamp_range(0..=self.account.len() - 1)
                                                     .prefix("跳转至账号"),
                                             )
                                             .changed();
