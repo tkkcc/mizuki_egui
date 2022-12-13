@@ -2,14 +2,20 @@ use chrono::Timelike;
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 use derivative;
 use derivative::Derivative;
-use egui::{widgets, DragValue, FontData, FontDefinitions, FontFamily, Response, TextEdit};
+use eframe::epaint::text::TextWrapping;
+use egui::text::LayoutJob;
+use egui::{
+    widgets, Align, Area, Color32, DragValue, FontData, FontDefinitions, FontFamily, Key, Order,
+    Response, TextEdit, TextFormat,
+};
+use egui::{Button, Frame};
 use egui_extras::{Column, TableBuilder};
 use serde::{Deserialize, Serialize};
 
 use derive_builder::Builder;
 
 const WIDTH: f32 = 320.0;
-const HEIGHT: f32 = 300.0;
+const HEIGHT: f32 = 320.0;
 
 #[derive(Deserialize, Serialize, PartialEq, Default, Clone)]
 enum Server {
@@ -83,8 +89,14 @@ pub struct Account {
     #[builder(default = "\"jm hd ce ls ap pr\".to_string()")]
     fight: String,
     max_drug: usize,
-    #[builder(default = "\"0 1 1 1 9 9 99\".to_string()")]
-    max_drug_day: String,
+    #[builder(default = "vec![0,1,1,1,9,9,99]")]
+    max_drug_day: Vec<usize>,
+    // #[builder(default = "0")]
+    // max_drug_day6: usize,
+    // #[builder(default = "1")]
+    // max_drug_day5: usize,
+    // #[builder(default = "99")]
+    // max_drug_day4: usize,
     max_stone: usize,
     prefer_goods: String,
     dislike_goods: String,
@@ -160,16 +172,25 @@ pub struct Account {
 pub struct Setting {
     captcha_username: String,
     captcha_password: String,
+    #[derivative(Default(value = "3"))]
     max_login_times_15min: usize,
-    max_fail_fight_times: usize,
+    #[derivative(Default(value = "2"))]
+    max_fight_failed_times: usize,
     qq_notify: String,
     qq_notify_server: String,
+    #[derivative(Default(value = "true"))]
     qq_notify_mail: bool,
+    #[derivative(Default(value = "true"))]
     qq_notify_dorm_enter: bool,
+    #[derivative(Default(value = "true"))]
     qq_notify_dorm_leave: bool,
+    #[derivative(Default(value = "true"))]
     qq_notify_task: bool,
     multi_account_allow_empty: bool,
     multi_account_clue: String,
+
+    #[derivative(Default(value = "\"4:00 12:00 20:00\".to_string()"))]
+    crontab: String,
 }
 
 #[derive(Deserialize, Serialize, PartialEq, Eq, Default, Clone)]
@@ -270,7 +291,22 @@ impl MyApp {
 
     fn one_account(ui: &mut egui::Ui, state: &mut Self, idx: usize) {
         if state.multi_account {
-            ui.label(idx.to_string());
+            ui.horizontal(|ui| {
+                ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
+                    if ui.button(format!("#{}", idx)).clicked() {
+                        let base = state
+                            .multi_account_choice
+                            .split("#")
+                            .next()
+                            .unwrap_or("")
+                            .trim();
+                        state.multi_account_choice = format!("{base} #{idx}");
+
+                        // todo!()
+                    }
+                })
+            });
+            // ui.label(idx.to_string());
             ui.horizontal(|ui| {
                 ui.label(format!("账号"));
                 ui.text_edit_singleline(&mut state.account[idx].username);
@@ -365,8 +401,89 @@ impl MyApp {
                         .clamp_range(0..=99)
                         .suffix("次"),
                 );
-                ui.label("6至0天药");
-                ui.text_edit_singleline(&mut state.account[idx].max_drug_day);
+                ui.label("到期");
+
+                let mut txt: String = state.account[idx]
+                    .max_drug_day
+                    .iter()
+                    .map(|x| x.to_string())
+                    .collect::<Vec<String>>()
+                    .join(" ");
+                let max_len = 18;
+                if txt.len() > max_len {
+                    txt = format!("{}...", txt.get(0..max_len-3).unwrap())
+                }
+
+                let popup_id = ui.next_auto_id();
+                let button_response = ui.add(Button::new(txt));
+                // let button_response = ui.add(Button::new(egui::text::LayoutJob {
+                // let mut job = LayoutJob::single_section(txt, TextFormat::default());
+                // let mut job = LayoutJob::simple(txt, TextFormat::default());
+                // job.wrap = TextWrapping {
+                //     max_rows: 1,
+                //     break_anywhere: true,
+                //     max_width: 10.0,
+                //     // overflow_character: "...".into(),
+                //     ..Default::default()
+                // };
+                // let button_response = ui.add(Button::new(job));
+                // egui::epaint::text::TextWrapping {
+                //     // max_rows: 1,
+                //     // break_anywhere: true,
+                //     ..Default::default()
+                // }
+                // ));
+                if button_response.clicked() {
+                    ui.memory().toggle_popup(popup_id);
+                }
+                if ui.memory().is_popup_open(popup_id) {
+                    let area_response = Area::new(popup_id)
+                        .order(Order::Foreground)
+                        // .fixed_pos(button_response.rect.max)
+                        .fixed_pos(button_response.rect.min)
+                        .constrain(true)
+                        .show(ui.ctx(), |ui| {
+                            Frame::popup(ui.style()).show(ui, |ui| {
+                                // egui::Grid::new(ui.next_auto_id()).min_col_width(0.0).show(ui, |ui| {
+                                egui::Grid::new("max_drug_day")
+                                    .min_col_width(0.0)
+                                    .show(ui, |ui| {
+                                        let x = &mut state.account[idx].max_drug_day;
+                                        let len = x.len();
+                                        for i in 0..len {
+                                            // ui.horizontal(|ui| {
+                                            ui.label(format!("{}天", len - i - 1));
+                                            ui.add(
+                                                DragValue::new(
+                                                    &mut state.account[idx].max_drug_day[i],
+                                                )
+                                                .suffix("个")
+                                                .clamp_range(0..=99),
+                                            );
+                                            ui.end_row();
+                                            // });
+                                        }
+                                    });
+                            });
+                        })
+                        .response;
+
+                    if !button_response.clicked()
+                        && (ui.input().key_pressed(Key::Escape)
+                            || area_response.clicked_elsewhere())
+                    {
+                        ui.memory().close_popup();
+                    }
+                }
+
+                // egui::ComboBox::from_label("Select one!")
+                //     .selected_text("ok")
+                //     .show_ui(ui, |ui| {
+                // ui.selectable_value(&mut selected, Enum::First, "First");
+                // ui.selectable_value(&mut selected, Enum::Second, "Second");
+                // ui.selectable_value(&mut selected, Enum::Third, "Third");
+                // });
+                // ui.text_edit_singleline(&mut state.account[idx].max_drug_day);
             });
         });
         ui.add_enabled_ui(state.account[idx].job_shop, |ui| {
@@ -425,6 +542,15 @@ impl MyApp {
             ui.label("时间");
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
+                    ui.checkbox(&mut state.account[idx].allow_monday, "周一");
+                    ui.checkbox(&mut state.account[idx].allow_tuesday, "周二");
+                    ui.checkbox(&mut state.account[idx].allow_wednesday, "周三");
+                    ui.checkbox(&mut state.account[idx].allow_thursday, "周四");
+                    ui.checkbox(&mut state.account[idx].allow_friday, "周五");
+                });
+                ui.horizontal(|ui| {
+                    ui.checkbox(&mut state.account[idx].allow_saturday, "周六");
+                    ui.checkbox(&mut state.account[idx].allow_sunday, "周日");
                     let txt = TextEdit::singleline(&mut state.account[idx].allow_after)
                         .desired_width(120.0);
                     let response = ui.add(txt);
@@ -441,15 +567,6 @@ impl MyApp {
                         state.account[idx].allow_after = dt.format("%Y-%m-%d %H:%M").to_string()
                     }
                     ui.label("起");
-                    ui.checkbox(&mut state.account[idx].allow_monday, "周一");
-                    ui.checkbox(&mut state.account[idx].allow_tuesday, "周二");
-                });
-                ui.horizontal(|ui| {
-                    ui.checkbox(&mut state.account[idx].allow_wednesday, "周三");
-                    ui.checkbox(&mut state.account[idx].allow_thursday, "周四");
-                    ui.checkbox(&mut state.account[idx].allow_friday, "周五");
-                    ui.checkbox(&mut state.account[idx].allow_saturday, "周六");
-                    ui.checkbox(&mut state.account[idx].allow_sunday, "周日");
 
                     // use chrono::{offset::Utc, DateTime, NaiveDate, NaiveDateTime, NaiveTime};
                     // use egui_datepicker::DatePicker;
@@ -469,10 +586,6 @@ impl MyApp {
         let idx = 0;
 
         Self::one_account(ui, state, idx);
-        // ui.horizontal(|ui| {
-        //     ui.label("定时");
-        //     ui.text_edit_singleline(&mut state.crontab)
-        // });
     }
 
     fn multi_account(ui: &mut egui::Ui, state: &mut Self, scroll_to_account_changed: bool) {
@@ -505,7 +618,7 @@ impl MyApp {
         ui.horizontal(|ui| {
             ui.label("同一关卡连续导航或代理失败出现");
             ui.add(
-                DragValue::new(&mut state.setting.max_fail_fight_times)
+                DragValue::new(&mut state.setting.max_fight_failed_times)
                     .suffix("次")
                     .clamp_range(0..=99),
             );
@@ -536,16 +649,29 @@ impl MyApp {
             ui.text_edit_singleline(&mut state.setting.qq_notify_server);
         });
         ui.horizontal(|ui| {
-            ui.label("额外通知");
-            egui::Grid::new("qq_notify_scene").show(ui, |ui| {
-                ui.checkbox(&mut state.setting.qq_notify_mail, "邮件前");
-                ui.checkbox(&mut state.setting.qq_notify_dorm_enter, "进基建");
-                ui.checkbox(&mut state.setting.qq_notify_dorm_leave, "出基建");
-                ui.checkbox(&mut state.setting.qq_notify_task, "任务前");
-            });
+            ui.label("通知场景");
+            // egui::Grid::new("qq_notify_scene").show(ui, |ui| {
+            ui.checkbox(&mut state.setting.qq_notify_mail, "邮件前");
+            ui.checkbox(&mut state.setting.qq_notify_dorm_enter, "进基建");
+            ui.checkbox(&mut state.setting.qq_notify_dorm_leave, "出基建");
+            ui.checkbox(&mut state.setting.qq_notify_task, "任务前");
+            // });
             // ui.checkbox(checked, text)
             // ui.text_edit_singleline(&mut state.setting.captcha_password);
         });
+        ui.horizontal(|ui| {
+            ui.label("多号模式");
+            ui.checkbox(&mut state.multi_account, "");
+        });
+
+        // let txt = if self.multi_account {
+        //     "多号"
+        // } else {
+        //     "单号"
+        // };
+        // if ui.button(txt).clicked() {
+        //     self.multi_account = !self.multi_account;
+        // }
         ui.horizontal(|ui| {
             ui.label("多号线索账号");
             ui.text_edit_singleline(&mut state.setting.multi_account_clue);
@@ -553,6 +679,11 @@ impl MyApp {
         ui.horizontal(|ui| {
             ui.label("多号不跳过空白账号");
             ui.checkbox(&mut state.setting.multi_account_allow_empty, "");
+        });
+
+        ui.horizontal(|ui| {
+            ui.label("定时重启");
+            ui.text_edit_singleline(&mut state.setting.crontab)
         });
     }
 }
@@ -569,45 +700,52 @@ impl eframe::App for MyApp {
         egui::TopBottomPanel::bottom("bottom").show(ctx, |ui| {
             ui.vertical_centered(|ui| {
                 ui.add_sized(egui::vec2(WIDTH, 0.0), |ui: &mut egui::Ui| {
-                    ui.vertical(|ui| {
-                        ui.add_enabled_ui(self.layout == Layout::default(), |ui| {
-                            ui.horizontal(|ui| {
-                                let txt = if self.multi_account {
-                                    "多号"
-                                } else {
-                                    "单号"
-                                };
-                                if ui.button(txt).clicked() {
-                                    self.multi_account = !self.multi_account;
-                                }
-                                if self.multi_account {
-                                    ui.horizontal(|ui| {
-                                        scroll_to_account_changed = ui
-                                            .add(
-                                                DragValue::new(&mut self.scroll_to_account)
-                                                    .clamp_range(0..=self.account.len() - 1)
-                                                    .prefix("跳转至账号"),
-                                            )
-                                            .changed();
-                                        ui.label("启用账号");
-                                        ui.text_edit_singleline(&mut self.multi_account_choice);
-                                    });
-                                }
-                            });
-                        });
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        // ui.label("world!");
+                        // ui.label("Hello");
+                        // egui::Layout::right_to_left(valign)
 
                         ui.horizontal(|ui| {
-                            // if ui.button("帮助").clicked() {
-                            //     self.layout = self.layout.toggle_default(Layout::Help);
-                            // }
+                            ui.add_enabled_ui(self.layout == Layout::default(), |ui| {
+                                // ui.horizontal(|ui| {
+                                if ui.button("启动").clicked() {}
+                                // if ui.button("定时").clicked() {}
+                                // if ui.button("启动").clicked() {}
+                            });
                             if ui.button("设置").clicked() {
                                 self.layout = self.layout.toggle_default(Layout::Setting);
                             }
                             ui.add_enabled_ui(self.layout == Layout::default(), |ui| {
-                                if ui.button("定时").clicked() {}
-                                if ui.button("启动").clicked() {}
-                                if ui.button("启动+定时").clicked() {}
+                                ui.add_visible_ui(self.multi_account, |ui| {
+                                    ui.with_layout(
+                                        egui::Layout::left_to_right(egui::Align::Center),
+                                        |ui| {
+                                            scroll_to_account_changed = ui
+                                                .add(
+                                                    DragValue::new(&mut self.scroll_to_account)
+                                                        .clamp_range(0..=self.account.len() - 1)
+                                                        .prefix("跳转至"),
+                                                )
+                                                .changed();
+                                            ui.label("启用");
+                                            ui.add(
+                                                TextEdit::singleline(
+                                                    &mut self.multi_account_choice,
+                                                ), // .desired_width(120.0),
+                                            );
+                                        },
+                                    )
+                                });
                             });
+
+                            // ui.horizontal(|ui| {
+                            // if ui.button("帮助").clicked() {
+                            //     self.layout = self.layout.toggle_default(Layout::Help);
+                            // }
+                            // if ui.button("退出").clicked() {
+                            //
+                            // }
+                            // ui.add_enabled_ui(self.layout == Layout::default(), |ui| {});
                         });
                     })
                     .response
