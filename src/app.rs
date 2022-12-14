@@ -1,197 +1,12 @@
-use chrono::Timelike;
-use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
-use derivative;
-use derivative::Derivative;
-use eframe::epaint::text::TextWrapping;
-use egui::text::LayoutJob;
-use egui::{
-    widgets, Align, Area, Color32, DragValue, FontData, FontDefinitions, FontFamily, Key, Order,
-    Response, TextEdit, TextFormat,
-};
+use crate::data::{Account, AccountBuilder, AccountMode, Server, Setting};
+use chrono::{Local, NaiveDateTime, TimeZone, Timelike};
+use egui::{Align, Area, DragValue, FontData, FontDefinitions, FontFamily, Key, Order, TextEdit};
 use egui::{Button, Frame};
 use egui_extras::{Column, TableBuilder};
 use serde::{Deserialize, Serialize};
 
-use derive_builder::Builder;
-
 const WIDTH: f32 = 320.0;
 const HEIGHT: f32 = 320.0;
-
-#[derive(Deserialize, Serialize, PartialEq, Default, Clone)]
-enum Server {
-    #[default]
-    Official,
-    Bilibili,
-}
-impl Server {
-    fn next(self) -> Self {
-        match self {
-            Self::Official => Self::Bilibili,
-            Self::Bilibili => Self::Official,
-        }
-    }
-    fn str(self) -> String {
-        match self {
-            Self::Official => "官服",
-            Self::Bilibili => "B服",
-        }
-        .into()
-    }
-}
-
-#[derive(Deserialize, Serialize, PartialEq, Default, Clone)]
-enum AccountMode {
-    #[default]
-    Daily,
-    ZL,
-    Recruit,
-}
-
-impl AccountMode {
-    fn next(&self) -> Self {
-        match self {
-            Self::Daily => Self::ZL,
-            Self::ZL => Self::Recruit,
-            Self::Recruit => Self::Daily,
-        }
-    }
-    fn str(&self) -> String {
-        match self {
-            Self::Daily => "日常",
-            Self::ZL => "肉鸽",
-            Self::Recruit => "公招",
-        }
-        .into()
-    }
-}
-
-#[derive(Builder, Deserialize, Serialize, Clone, Default)]
-#[serde(default)]
-#[builder(default)]
-pub struct Account {
-    #[builder(default = "9999")]
-    zl_max_coin: usize,
-    #[builder(default = "9999")]
-    zl_max_level: usize,
-    #[builder(default = "true")]
-    zl_coin: bool,
-    #[builder(default = "true")]
-    zl_level: bool,
-    #[builder(default = "true")]
-    zl_no_waste: bool,
-    mode: AccountMode,
-    #[builder(default = "true")]
-    inherit: bool,
-    inherit_index: usize,
-    username: String,
-    password: String,
-    server: Server,
-    #[builder(default = "\"jm hd ce ls ap pr\".to_string()")]
-    fight: String,
-    max_drug: usize,
-    #[builder(default = "vec![0,1,1,1,9,9,99]")]
-    max_drug_day: Vec<usize>,
-    // #[builder(default = "0")]
-    // max_drug_day6: usize,
-    // #[builder(default = "1")]
-    // max_drug_day5: usize,
-    // #[builder(default = "99")]
-    // max_drug_day4: usize,
-    max_stone: usize,
-    prefer_goods: String,
-    dislike_goods: String,
-
-    #[builder(default = "true")]
-    recruit0: bool,
-    #[builder(default = "true")]
-    recruit1: bool,
-    #[builder(default = "true")]
-    recruit4: bool,
-    #[builder(default = "true")]
-    recruit5: bool,
-    #[builder(default = "true")]
-    recruit6: bool,
-
-    #[builder(default = "true")]
-    recruit_recruit1: bool,
-    #[builder(default = "true")]
-    recruit_recruit4: bool,
-    #[builder(default = "true")]
-    recruit_recruit5: bool,
-    #[builder(default = "true")]
-    recruit_recruit6: bool,
-    #[builder(default = "true")]
-    job_mail: bool,
-    #[builder(default = "true")]
-    job_fight: bool,
-    #[builder(default = "true")]
-    job_friend: bool,
-    #[builder(default = "true")]
-    job_gain: bool,
-    #[builder(default = "true")]
-    job_shift: bool,
-    #[builder(default = "true")]
-    job_manu: bool,
-    #[builder(default = "true")]
-    job_clue: bool,
-    #[builder(default = "true")]
-    job_assist: bool,
-    #[builder(default = "true")]
-    job_shop: bool,
-    #[builder(default = "true")]
-    job_recruit: bool,
-    #[builder(default = "true")]
-    job_task: bool,
-    #[builder(default = "true")]
-    job_activity: bool,
-    #[builder(default = "true")]
-    allow_monday: bool,
-    #[builder(default = "true")]
-    allow_tuesday: bool,
-    #[builder(default = "true")]
-    allow_wednesday: bool,
-    #[builder(default = "true")]
-    allow_thursday: bool,
-    #[builder(default = "true")]
-    allow_friday: bool,
-    #[builder(default = "true")]
-    allow_saturday: bool,
-    #[builder(default = "true")]
-    allow_sunday: bool,
-
-    // #[builder(default = "\"2022-01-01 00:00\".to_string()")]
-    #[builder(
-        default = "Local::now().with_minute(0).and_then(|x| x.with_hour(0)).unwrap().format(\"%Y-%m-%d %H:%M\").to_string()"
-    )]
-    allow_after: String,
-}
-
-#[derive(serde::Deserialize, serde::Serialize, Clone, Derivative)]
-#[derivative(Default)]
-#[serde(default)]
-pub struct Setting {
-    captcha_username: String,
-    captcha_password: String,
-    #[derivative(Default(value = "3"))]
-    max_login_times_15min: usize,
-    #[derivative(Default(value = "2"))]
-    max_fight_failed_times: usize,
-    qq_notify: String,
-    qq_notify_server: String,
-    #[derivative(Default(value = "true"))]
-    qq_notify_mail: bool,
-    #[derivative(Default(value = "true"))]
-    qq_notify_dorm_enter: bool,
-    #[derivative(Default(value = "true"))]
-    qq_notify_dorm_leave: bool,
-    #[derivative(Default(value = "true"))]
-    qq_notify_task: bool,
-    multi_account_allow_empty: bool,
-    multi_account_clue: String,
-
-    #[derivative(Default(value = "\"4:00 12:00 20:00\".to_string()"))]
-    crontab: String,
-}
 
 #[derive(Deserialize, Serialize, PartialEq, Eq, Default, Clone)]
 enum Layout {
@@ -210,18 +25,13 @@ impl Layout {
     }
 }
 
-/// We derive Deserialize/Serialize so we can persist app state on shutdown.
-#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(default)]
 pub struct MyApp {
     account: Vec<Account>,
-    multi_account: bool,
-    multi_account_choice: String,
-    scroll_to_account: usize,
     setting: Setting,
-
     layout: Layout,
-    end_restart: bool,
+    scroll_to_account: usize,
 }
 
 impl Default for MyApp {
@@ -229,22 +39,17 @@ impl Default for MyApp {
         let mut account = vec![AccountBuilder::default().inherit(false).build().unwrap()];
         account.extend(vec![AccountBuilder::default().build().unwrap(); 9999]);
         let total = account.len();
-
+        let setting = Setting::default().multi_account_choice(format!("0-{total}"));
         Self {
             account,
-            scroll_to_account: 0,
-            multi_account: false,
-            multi_account_choice: format!("0-{}", total - 1).into(),
-            setting: Setting::default(),
-
+            setting,
             layout: Layout::Account,
-            end_restart: false,
+            scroll_to_account: 0,
         }
     }
 }
 
 impl MyApp {
-    /// Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         Self::set_style(&cc.egui_ctx);
         Default::default()
@@ -290,23 +95,21 @@ impl MyApp {
     }
 
     fn one_account(ui: &mut egui::Ui, state: &mut Self, idx: usize) {
-        if state.multi_account {
+        if state.setting.multi_account {
             ui.horizontal(|ui| {
                 ui.with_layout(egui::Layout::right_to_left(Align::Center), |ui| {
                     if ui.button(format!("#{}", idx)).clicked() {
                         let base = state
+                            .setting
                             .multi_account_choice
                             .split("#")
                             .next()
                             .unwrap_or("")
                             .trim();
-                        state.multi_account_choice = format!("{base} #{idx}");
-
-                        // todo!()
+                        state.setting.multi_account_choice = format!("{base} #{idx}");
                     }
                 })
             });
-            // ui.label(idx.to_string());
             ui.horizontal(|ui| {
                 ui.label(format!("账号"));
                 ui.text_edit_singleline(&mut state.account[idx].username);
@@ -326,7 +129,7 @@ impl MyApp {
             if ui.button(state.account[idx].mode.str()).clicked() {
                 state.account[idx].mode = state.account[idx].mode.next();
             }
-            if state.multi_account && state.account[idx].mode == AccountMode::Daily {
+            if state.setting.multi_account && state.account[idx].mode == AccountMode::Daily {
                 if ui
                     .button(if state.account[idx].inherit {
                         "继承"
@@ -411,7 +214,7 @@ impl MyApp {
                     .join(" ");
                 let max_len = 18;
                 if txt.len() > max_len {
-                    txt = format!("{}...", txt.get(0..max_len-3).unwrap())
+                    txt = format!("{}...", txt.get(0..max_len - 3).unwrap())
                 }
 
                 let popup_id = ui.next_auto_id();
@@ -606,7 +409,6 @@ impl MyApp {
     }
 
     fn setting(ui: &mut egui::Ui, state: &mut Self) {
-        let idx = 0;
         ui.horizontal(|ui| {
             ui.label("图鉴账号");
             ui.text_edit_singleline(&mut state.setting.captcha_username);
@@ -661,7 +463,7 @@ impl MyApp {
         });
         ui.horizontal(|ui| {
             ui.label("多号模式");
-            ui.checkbox(&mut state.multi_account, "");
+            ui.checkbox(&mut state.setting.multi_account, "");
         });
 
         // let txt = if self.multi_account {
@@ -701,22 +503,15 @@ impl eframe::App for MyApp {
             ui.vertical_centered(|ui| {
                 ui.add_sized(egui::vec2(WIDTH, 0.0), |ui: &mut egui::Ui| {
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        // ui.label("world!");
-                        // ui.label("Hello");
-                        // egui::Layout::right_to_left(valign)
-
                         ui.horizontal(|ui| {
                             ui.add_enabled_ui(self.layout == Layout::default(), |ui| {
-                                // ui.horizontal(|ui| {
                                 if ui.button("启动").clicked() {}
-                                // if ui.button("定时").clicked() {}
-                                // if ui.button("启动").clicked() {}
                             });
                             if ui.button("设置").clicked() {
                                 self.layout = self.layout.toggle_default(Layout::Setting);
                             }
                             ui.add_enabled_ui(self.layout == Layout::default(), |ui| {
-                                ui.add_visible_ui(self.multi_account, |ui| {
+                                ui.add_visible_ui(self.setting.multi_account, |ui| {
                                     ui.with_layout(
                                         egui::Layout::left_to_right(egui::Align::Center),
                                         |ui| {
@@ -728,24 +523,13 @@ impl eframe::App for MyApp {
                                                 )
                                                 .changed();
                                             ui.label("启用");
-                                            ui.add(
-                                                TextEdit::singleline(
-                                                    &mut self.multi_account_choice,
-                                                ), // .desired_width(120.0),
-                                            );
+                                            ui.add(TextEdit::singleline(
+                                                &mut self.setting.multi_account_choice,
+                                            ));
                                         },
                                     )
                                 });
                             });
-
-                            // ui.horizontal(|ui| {
-                            // if ui.button("帮助").clicked() {
-                            //     self.layout = self.layout.toggle_default(Layout::Help);
-                            // }
-                            // if ui.button("退出").clicked() {
-                            //
-                            // }
-                            // ui.add_enabled_ui(self.layout == Layout::default(), |ui| {});
                         });
                     })
                     .response
@@ -765,7 +549,7 @@ impl eframe::App for MyApp {
                             Layout::Setting => Self::setting(ui, self),
                             Layout::Help => Self::setting(ui, self),
                             Layout::Account => {
-                                if self.multi_account {
+                                if self.setting.multi_account {
                                     Self::multi_account(ui, self, scroll_to_account_changed)
                                 } else {
                                     Self::single_account(ui, self)
