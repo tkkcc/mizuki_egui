@@ -10,12 +10,14 @@ pub enum Server {
     Bilibili,
 }
 impl Server {
+    #[allow(dead_code)]
     pub fn next(self) -> Self {
         match self {
             Self::Official => Self::Bilibili,
             Self::Bilibili => Self::Official,
         }
     }
+    #[allow(dead_code)]
     pub fn str(self) -> String {
         match self {
             Self::Official => "官服",

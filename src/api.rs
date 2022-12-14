@@ -3,6 +3,7 @@ use ehttp::{self, Request};
 use poll_promise::Promise;
 use poll_promise::Sender;
 use rsa::pkcs8::DecodePublicKey;
+use serde::Deserialize;
 use serde::Serialize;
 use serde_json::json;
 use serde_json::Value;
@@ -10,7 +11,7 @@ use std::error::Error;
 
 use crate::data::Server;
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Deserialize, Serialize)]
 pub enum LoginResult {
     Success,
     Fail,
@@ -160,19 +161,17 @@ pub fn bilibili_login_promise(username: &str, password: &str) -> Promise<LoginRe
     promise
 }
 
-pub fn login(username: &str, password: &str, server: &Server) -> LoginResult {
+pub fn login_promise(username: &str, password: &str, server: &Server) -> Promise<LoginResult> {
     match server {
-        Server::Official => {
-            let promise = official_login_promise(username, password);
-            let result = promise.block_until_ready();
-            *result
-        }
-        Server::Bilibili => {
-            let promise = bilibili_login_promise(username, password);
-            let result = promise.block_until_ready();
-            *result
-        }
+        Server::Official => official_login_promise(username, password),
+        Server::Bilibili => bilibili_login_promise(username, password),
     }
+}
+
+pub fn login(username: &str, password: &str, server: &Server) -> LoginResult {
+    let promise = login_promise(username, password, server);
+    let result = promise.block_until_ready();
+    *result
 }
 
 #[cfg(test)]

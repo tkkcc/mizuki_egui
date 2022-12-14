@@ -1,8 +1,11 @@
+use crate::api::{login_promise, LoginResult};
 use crate::data::{Account, AccountBuilder, AccountMode, Server, Setting};
 use chrono::{Local, NaiveDateTime, TimeZone, Timelike};
 use egui::{Align, Area, DragValue, FontData, FontDefinitions, FontFamily, Key, Order, TextEdit};
 use egui::{Button, Frame};
 use egui_extras::{Column, TableBuilder};
+use egui_notify::Toasts;
+use poll_promise::Promise;
 use serde::{Deserialize, Serialize};
 
 const WIDTH: f32 = 320.0;
@@ -32,6 +35,10 @@ pub struct MyApp {
     setting: Setting,
     layout: Layout,
     scroll_to_account: usize,
+    #[serde(skip)]
+    logining: Option<Promise<LoginResult>>,
+    #[serde(skip)]
+    toast: Toasts,
 }
 
 impl Default for MyApp {
@@ -45,6 +52,8 @@ impl Default for MyApp {
             setting,
             layout: Layout::Account,
             scroll_to_account: 0,
+            logining: None,
+            toast: Default::default(),
         }
     }
 }
@@ -123,13 +132,52 @@ impl MyApp {
             ui.label("服务");
             ui.radio_value(&mut state.account[idx].server, Server::Official, "官服");
             ui.radio_value(&mut state.account[idx].server, Server::Bilibili, "B服");
+            if !state.setting.multi_account {
+                return;
+            }
+
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if let Some(promise) = &state.logining {
+                    if let Some(result) = promise.ready() {
+                        let result = match result {
+                            LoginResult::Fail => "无效",
+                            LoginResult::Success => "有效",
+                            LoginResult::Unknown => "未知",
+                        };
+                        state.toast.info(result);
+                        // ui.label(result);
+                        state.logining = None;
+                    } else {
+                        ui.spinner();
+                    }
+                    return;
+                }
+
+                let button = ui.button("测试");
+                if button.clicked() {
+                    // let promise = login_promise(
+                    //     &state.account[idx].username,
+                    //     &state.account[idx].password,
+                    //     &state.account[idx].server,
+                    // );
+                    // state.logining = Some(promise);
+
+                    state.toast.info("dddd");
+                    state.toast.success("dddd");
+                }
+            });
         });
         ui.horizontal(|ui| {
             ui.label("模式");
             if ui.button(state.account[idx].mode.str()).clicked() {
                 state.account[idx].mode = state.account[idx].mode.next();
             }
-            if state.setting.multi_account && state.account[idx].mode == AccountMode::Daily {
+
+            if !state.setting.multi_account {
+                return;
+            }
+
+            if state.account[idx].mode == AccountMode::Daily {
                 if ui
                     .button(if state.account[idx].inherit {
                         "继承"
@@ -492,6 +540,9 @@ impl MyApp {
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+
+        self.toast.show(ctx);
+
         egui::TopBottomPanel::top("top").show(ctx, |ui| {
             ui.vertical_centered(|ui| {
                 ui.label("Mizuki 611-12.01");
